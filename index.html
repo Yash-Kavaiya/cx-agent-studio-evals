@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CX Agent Studio — Evaluations Dashboard</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════
+   DESIGN SYSTEM — Google Cloud-inspired, dark mode
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-card: #1c2128;
+  --bg-hover: #21262d;
+  --bg-elevated: #242a33;
+  --border: #30363d;
+  --border-light: #21262d;
+
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+
+  /* Google Cloud palette */
+  --gc-blue: #4285f4;
+  --gc-green: #34a853;
+  --gc-yellow: #fbbc04;
+  --gc-red: #ea4335;
+  --gc-cyan: #00bcd4;
+  --gc-purple: #a142f4;
+
+  --gc-blue-dim: rgba(66,133,244,0.15);
+  --gc-green-dim: rgba(52,168,83,0.15);
+  --gc-yellow-dim: rgba(251,188,4,0.15);
+  --gc-red-dim: rgba(234,67,53,0.15);
+  --gc-cyan-dim: rgba(0,188,212,0.12);
+  --gc-purple-dim: rgba(161,66,244,0.12);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-heading: 'Google Sans', 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,.3), 0 0 0 1px var(--border);
+  --shadow-elevated: 0 8px 24px rgba(0,0,0,.4);
+  --transition: 0.2s cubic-bezier(.4,0,.2,1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Subtle grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(66,133,244,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(66,133,244,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── LAYOUT ── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 260px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform var(--transition);
+}
+
+.sidebar-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-brand .gc-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--gc-blue), var(--gc-cyan));
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+
+.sidebar-brand .gc-icon .material-symbols-outlined { font-size: 18px; color: #fff; }
+
+.sidebar-brand h1 {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.sidebar-brand h1 span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px;
+  overflow-y: auto;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-muted);
+  padding: 16px 12px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  position: relative;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--gc-blue-dim);
+  color: var(--gc-blue);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 3px;
+  background: var(--gc-blue);
+  border-radius: 0 3px 3px 0;
+}
+
+.nav-item .material-symbols-outlined { font-size: 18px; }
+
+.nav-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.sidebar-footer code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gc-cyan);
+  background: var(--gc-cyan-dim);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ── MAIN CONTENT ── */
+.main {
+  flex: 1;
+  margin-left: 260px;
+  padding: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(13,17,23,.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-breadcrumb {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.topbar-breadcrumb strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: all var(--transition);
+}
+
+.btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+
+.btn-primary {
+  background: var(--gc-blue);
+  border-color: var(--gc-blue);
+  color: #fff;
+}
+.btn-primary:hover { background: #5a95f5; }
+
+.btn .material-symbols-outlined { font-size: 16px; }
+
+/* ── CONTENT AREA ── */
+.content {
+  padding: 28px 32px 60px;
+}
+
+/* ── PANELS (tabs) ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── KPI GRID ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition);
+}
+
+.kpi-card:hover {
+  border-color: var(--text-muted);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.kpi-card.blue::before   { background: var(--gc-blue); }
+.kpi-card.green::before  { background: var(--gc-green); }
+.kpi-card.yellow::before { background: var(--gc-yellow); }
+.kpi-card.red::before    { background: var(--gc-red); }
+.kpi-card.cyan::before   { background: var(--gc-cyan); }
+.kpi-card.purple::before { background: var(--gc-purple); }
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-card.blue .kpi-value   { color: var(--gc-blue); }
+.kpi-card.green .kpi-value  { color: var(--gc-green); }
+.kpi-card.yellow .kpi-value { color: var(--gc-yellow); }
+.kpi-card.red .kpi-value    { color: var(--gc-red); }
+.kpi-card.cyan .kpi-value   { color: var(--gc-cyan); }
+.kpi-card.purple .kpi-value { color: var(--gc-purple); }
+
+.kpi-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--gc-blue);
+}
+
+/* ── CHARTS GRID ── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.chart-card h3 {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* Bar chart */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  height: 160px;
+  padding-top: 8px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar {
+  width: 100%;
+  max-width: 40px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.6s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+
+.bar:hover { filter: brightness(1.2); }
+
+.bar-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.bar-value {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+/* Donut chart */
+.donut-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.donut-svg { width: 120px; height: 120px; }
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.donut-legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+
+/* ── TABLE ── */
+.table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.table-card .table-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.table-card .table-header h3 {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+tbody td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+
+tbody tr:hover { background: var(--bg-hover); }
+
+tbody tr:last-child td { border-bottom: none; }
+
+.resource-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gc-cyan);
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── BADGES / PILLS ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-heading);
+}
+
+.badge-passed  { background: var(--gc-green-dim); color: var(--gc-green); }
+.badge-failed  { background: var(--gc-red-dim);   color: var(--gc-red); }
+.badge-partial { background: var(--gc-yellow-dim); color: var(--gc-yellow); }
+.badge-running { background: var(--gc-blue-dim);  color: var(--gc-blue); }
+.badge-queued  { background: var(--gc-purple-dim); color: var(--gc-purple); }
+.badge-golden  { background: var(--gc-cyan-dim);  color: var(--gc-cyan); }
+.badge-scenario{ background: var(--gc-purple-dim); color: var(--gc-purple); }
+.badge-enabled { background: var(--gc-green-dim); color: var(--gc-green); }
+.badge-disabled{ background: var(--bg-elevated);  color: var(--text-muted); }
+
+.badge-verb {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.badge-GET    { background: var(--gc-green-dim); color: var(--gc-green); }
+.badge-POST   { background: var(--gc-blue-dim);  color: var(--gc-blue); }
+.badge-PATCH  { background: var(--gc-yellow-dim); color: var(--gc-yellow); }
+.badge-DELETE { background: var(--gc-red-dim);   color: var(--gc-red); }
+
+/* Progress bar */
+.progress-bar {
+  width: 100px;
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* ── API REFERENCE ── */
+.api-resource {
+  margin-bottom: 20px;
+}
+
+.api-resource-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gc-blue);
+  padding: 10px 16px;
+  background: var(--gc-blue-dim);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border: 1px solid rgba(66,133,244,.2);
+  border-bottom: none;
+}
+
+.api-method-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-top: none;
+  font-size: 12px;
+}
+
+.api-method-row:last-child { border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+
+.api-path {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.api-action {
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 80px;
+}
+
+/* ── LOADING SKELETON ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-hover) 50%, var(--bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeInUp 0.4s cubic-bezier(.4,0,.2,1) forwards;
+  opacity: 0;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- ════════════ SIDEBAR ════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="gc-icon"><span class="material-symbols-outlined">monitoring</span></div>
+        <h1>CX Agent Studio<span>Evaluations Dashboard</span></h1>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-item active" data-panel="overview">
+        <span class="material-symbols-outlined">dashboard</span>
+        Dashboard
+      </a>
+
+      <div class="nav-section-label">Resources</div>
+      <a class="nav-item" data-panel="datasets">
+        <span class="material-symbols-outlined">dataset</span>
+        Datasets
+        <span class="nav-badge" id="nav-ds-count">—</span>
+      </a>
+      <a class="nav-item" data-panel="evaluations">
+        <span class="material-symbols-outlined">fact_check</span>
+        Evaluations
+        <span class="nav-badge" id="nav-eval-count">—</span>
+      </a>
+      <a class="nav-item" data-panel="runs">
+        <span class="material-symbols-outlined">play_circle</span>
+        Evaluation Runs
+        <span class="nav-badge" id="nav-run-count">—</span>
+      </a>
+      <a class="nav-item" data-panel="results">
+        <span class="material-symbols-outlined">analytics</span>
+        Results
+        <span class="nav-badge" id="nav-res-count">—</span>
+      </a>
+      <a class="nav-item" data-panel="expectations">
+        <span class="material-symbols-outlined">checklist</span>
+        Expectations
+        <span class="nav-badge" id="nav-exp-count">—</span>
+      </a>
+      <a class="nav-item" data-panel="scheduled">
+        <span class="material-symbols-outlined">schedule</span>
+        Scheduled Runs
+        <span class="nav-badge" id="nav-sched-count">—</span>
+      </a>
+
+      <div class="nav-section-label">Reference</div>
+      <a class="nav-item" data-panel="apiref">
+        <span class="material-symbols-outlined">api</span>
+        API Reference
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      Package <code>google.cloud.ces.v1beta</code>
+    </div>
+  </aside>
+
+  <!-- ════════════ MAIN ════════════ -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn" id="menu-toggle" style="display:none;">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div class="topbar-breadcrumb">
+          Google Cloud &rsaquo; CX Agent Studio &rsaquo; <strong id="breadcrumb-page">Dashboard</strong>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn" onclick="loadAll()">
+          <span class="material-symbols-outlined">refresh</span> Refresh
+        </button>
+        <button class="btn btn-primary">
+          <span class="material-symbols-outlined">add</span> New Evaluation
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ═══════ OVERVIEW PANEL ═══════ -->
+      <div class="panel active" id="panel-overview">
+        <div class="kpi-grid" id="kpi-grid"></div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3>Pass Rate Trend (Last 7 Days)</h3>
+            <div class="bar-chart" id="pass-rate-chart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>Evaluation Types</h3>
+            <div class="donut-container" id="type-donut"></div>
+          </div>
+        </div>
+
+        <!-- Recent runs preview -->
+        <div class="section-header">
+          <div class="section-title">
+            <span class="material-symbols-outlined">play_circle</span>
+            Recent Evaluation Runs
+          </div>
+          <button class="btn" onclick="switchPanel('runs')">View all</button>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Run ID</th>
+                <th>State</th>
+                <th>Progress</th>
+                <th>Pass Rate</th>
+                <th>Duration</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="overview-runs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════ DATASETS PANEL ═══════ -->
+      <div class="panel" id="panel-datasets">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="material-symbols-outlined">dataset</span>
+            Evaluation Datasets
+          </div>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Display Name</th>
+                <th>Description</th>
+                <th>Evaluations</th>
+                <th>Resource Name</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody id="datasets-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════ EVALUATIONS PANEL ═══════ -->
+      <div class="panel" id="panel-evaluations">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="material-symbols-outlined">fact_check</span>
+            Evaluations
+          </div>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Display Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Pass Rate</th>
+                <th>Turns</th>
+                <th>Resource Name</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody id="evaluations-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════ RUNS PANEL ═══════ -->
+      <div class="panel" id="panel-runs">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="material-symbols-outlined">play_circle</span>
+            Evaluation Runs
+          </div>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Run ID</th>
+                <th>State</th>
+                <th>Progress</th>
+                <th>Pass Rate</th>
+                <th>Duration</th>
+                <th>Evaluation</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="runs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════ RESULTS PANEL ═══════ -->
+      <div class="panel" id="panel-results">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="material-symbols-outlined">analytics</span>
+            Evaluation Results
+          </div>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Result ID</th>
+                <th>Outcome</th>
+                <th>Semantic Similarity</th>
+                <th>Hallucination</th>
+                <th>Tool Match</th>
+                <th>Latency</th>
+                <th>Turns</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════ EXPECTATIONS PANEL ═══════ -->
+      <div class="panel" id="panel-expectations">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="material-symbols-outlined">checklist</span>
+            Evaluation Expectations
+          </div>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Display Name</th>
+                <th>Type</th>
+                <th>LLM Criteria</th>
+                <th>Resource Name</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="expectations-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════ SCHEDULED PANEL ═══════ -->
+      <div class="panel" id="panel-scheduled">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="material-symbols-outlined">schedule</span>
+            Scheduled Evaluation Runs
+          </div>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Display Name</th>
+                <th>Status</th>
+                <th>Cron Schedule</th>
+                <th>Last Run</th>
+                <th>Next Run</th>
+                <th>Resource Name</th>
+              </tr>
+            </thead>
+            <tbody id="scheduled-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════ API REFERENCE PANEL ═══════ -->
+      <div class="panel" id="panel-apiref">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="material-symbols-outlined">api</span>
+            REST API Reference
+          </div>
+        </div>
+        <div id="apiref-container"></div>
+      </div>
+
+    </div><!-- .content -->
+  </main>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════
+const navItems = document.querySelectorAll('.nav-item[data-panel]');
+const panels   = document.querySelectorAll('.panel');
+const breadcrumb = document.getElementById('breadcrumb-page');
+
+function switchPanel(name) {
+  panels.forEach(p => p.classList.remove('active'));
+  navItems.forEach(n => n.classList.remove('active'));
+  const panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
+  const nav = document.querySelector(`.nav-item[data-panel="${name}"]`);
+  if (nav) nav.classList.add('active');
+  const labels = {
+    overview: 'Dashboard', datasets: 'Datasets', evaluations: 'Evaluations',
+    runs: 'Evaluation Runs', results: 'Results', expectations: 'Expectations',
+    scheduled: 'Scheduled Runs', apiref: 'API Reference'
+  };
+  breadcrumb.textContent = labels[name] || name;
+}
+
+navItems.forEach(n => {
+  n.addEventListener('click', () => switchPanel(n.dataset.panel));
+});
+
+// Mobile menu
+const menuToggle = document.getElementById('menu-toggle');
+const sidebar = document.getElementById('sidebar');
+if (window.innerWidth <= 1024) menuToggle.style.display = '';
+menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+// ════════════════════════════════════════════════════════
+// DATA LOADING
+// ════════════════════════════════════════════════════════
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  return res.json();
+}
+
+function shortName(fullName) {
+  const parts = fullName.split('/');
+  return parts[parts.length - 1];
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function badgeFor(status) {
+  const s = (status || '').toUpperCase();
+  const map = {
+    PASSED: 'passed', FAILED: 'failed', PARTIAL: 'partial',
+    COMPLETED: 'passed', RUNNING: 'running', QUEUED: 'queued',
+    GOLDEN: 'golden', SCENARIO: 'scenario',
+    LLM_CRITERIA: 'golden', TOOL_EXPECTATION: 'scenario',
+  };
+  return `<span class="badge badge-${map[s] || 'partial'}">${s}</span>`;
+}
+
+function pctBar(val) {
+  if (val == null) return '—';
+  const pct = Math.round(val * 100);
+  const color = pct >= 80 ? 'var(--gc-green)' : pct >= 60 ? 'var(--gc-yellow)' : 'var(--gc-red)';
+  return `<div style="display:flex;align-items:center;gap:8px;">
+    <div class="progress-bar"><div class="progress-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span style="font-family:var(--font-mono);font-size:12px;color:${color}">${pct}%</span>
+  </div>`;
+}
+
+// ── STATS / KPIs ──
+async function loadStats() {
+  const s = await fetchJSON('/api/stats');
+  const grid = document.getElementById('kpi-grid');
+  grid.innerHTML = '';
+  const kpis = [
+    { label: 'Datasets',       value: s.totalDatasets,     cls: 'blue' },
+    { label: 'Evaluations',    value: s.totalEvaluations,  cls: 'cyan' },
+    { label: 'Runs (Total)',   value: s.totalRuns,         cls: 'purple', sub: `${s.completedRuns} completed · ${s.runningRuns} running` },
+    { label: 'Avg Pass Rate',  value: Math.round(s.avgPassRate * 100) + '%', cls: 'green' },
+    { label: 'Results',        value: s.totalResults,      cls: 'blue',   sub: `${s.passedResults} passed · ${s.failedResults} failed` },
+    { label: 'Hallucinations', value: s.hallucinationCount, cls: 'red' },
+    { label: 'Avg Latency',    value: s.avgLatencyMs + 'ms', cls: 'yellow' },
+    { label: 'Avg Similarity', value: s.avgSimilarity,     cls: 'cyan' },
+    { label: 'Expectations',   value: s.totalExpectations,  cls: 'purple' },
+    { label: 'Scheduled',      value: `${s.enabledScheduled}/${s.totalScheduled}`, cls: 'green', sub: 'enabled / total' },
+  ];
+  kpis.forEach((k, i) => {
+    const card = document.createElement('div');
+    card.className = `kpi-card ${k.cls} animate-in`;
+    card.style.animationDelay = `${i * 50}ms`;
+    card.innerHTML = `<div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div>${k.sub ? `<div class="kpi-sub">${k.sub}</div>` : ''}`;
+    grid.appendChild(card);
+  });
+
+  // Nav badges
+  document.getElementById('nav-ds-count').textContent   = s.totalDatasets;
+  document.getElementById('nav-eval-count').textContent  = s.totalEvaluations;
+  document.getElementById('nav-run-count').textContent   = s.totalRuns;
+  document.getElementById('nav-res-count').textContent   = s.totalResults;
+  document.getElementById('nav-exp-count').textContent   = s.totalExpectations;
+  document.getElementById('nav-sched-count').textContent = s.totalScheduled;
+
+  // Bar chart
+  const chartEl = document.getElementById('pass-rate-chart');
+  chartEl.innerHTML = '';
+  s.passRateTrend.forEach(d => {
+    const pct = Math.round(d.rate * 100);
+    const color = pct >= 80 ? 'var(--gc-green)' : pct >= 60 ? 'var(--gc-yellow)' : 'var(--gc-red)';
+    chartEl.innerHTML += `<div class="bar-col">
+      <div class="bar-value">${pct}%</div>
+      <div class="bar" style="height:${pct}%;background:${color}"></div>
+      <div class="bar-label">${d.day.split(' ')[1]}</div>
+    </div>`;
+  });
+
+  // Donut
+  const donutEl = document.getElementById('type-donut');
+  const total = s.goldenCount + s.scenarioCount;
+  const goldenPct = (s.goldenCount / total) * 100;
+  const scenarioPct = 100 - goldenPct;
+  const r = 42, c = 2 * Math.PI * r;
+  donutEl.innerHTML = `
+    <svg class="donut-svg" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--bg-elevated)" stroke-width="14"/>
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--gc-cyan)" stroke-width="14"
+        stroke-dasharray="${c * goldenPct / 100} ${c}" stroke-dashoffset="${c * 0.25}"
+        style="transition: stroke-dasharray 0.8s ease"/>
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--gc-purple)" stroke-width="14"
+        stroke-dasharray="${c * scenarioPct / 100} ${c}" stroke-dashoffset="${c * 0.25 - c * goldenPct / 100}"
+        style="transition: stroke-dasharray 0.8s ease"/>
+      <text x="60" y="56" text-anchor="middle" fill="var(--text-primary)" font-family="var(--font-heading)" font-size="18" font-weight="700">${total}</text>
+      <text x="60" y="72" text-anchor="middle" fill="var(--text-muted)" font-size="9">TOTAL</text>
+    </svg>
+    <div class="donut-legend">
+      <div class="donut-legend-item"><div class="donut-legend-dot" style="background:var(--gc-cyan)"></div>Golden (${s.goldenCount})</div>
+      <div class="donut-legend-item"><div class="donut-legend-dot" style="background:var(--gc-purple)"></div>Scenario (${s.scenarioCount})</div>
+    </div>`;
+}
+
+// ── RUNS (overview preview) ──
+async function loadOverviewRuns() {
+  const runs = await fetchJSON('/api/runs');
+  const tbody = document.getElementById('overview-runs-tbody');
+  tbody.innerHTML = '';
+  runs.slice(0, 6).forEach(r => {
+    const pct = r.progress ? Math.round(r.progress.completedCount / r.progress.totalCount * 100) : 0;
+    const progColor = r.state === 'COMPLETED' ? 'var(--gc-green)' : r.state === 'RUNNING' ? 'var(--gc-blue)' : r.state === 'FAILED' ? 'var(--gc-red)' : 'var(--gc-purple)';
+    tbody.innerHTML += `<tr>
+      <td class="resource-name">${shortName(r.name)}</td>
+      <td>${badgeFor(r.state)}</td>
+      <td><div style="display:flex;align-items:center;gap:8px;">
+        <div class="progress-bar"><div class="progress-bar-fill" style="width:${pct}%;background:${progColor}"></div></div>
+        <span style="font-size:11px;color:var(--text-muted)">${r.progress.completedCount}/${r.progress.totalCount}</span>
+      </div></td>
+      <td>${pctBar(r.passRate)}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${r.duration || '—'}</td>
+      <td>${fmtDate(r.createTime)}</td>
+    </tr>`;
+  });
+}
+
+// ── DATASETS ──
+async function loadDatasets() {
+  const data = await fetchJSON('/api/datasets');
+  const tbody = document.getElementById('datasets-tbody');
+  tbody.innerHTML = '';
+  data.forEach(d => {
+    tbody.innerHTML += `<tr>
+      <td style="font-weight:500;color:var(--text-primary)">${d.displayName}</td>
+      <td>${d.description}</td>
+      <td style="font-family:var(--font-mono)">${d.evaluationCount}</td>
+      <td class="resource-name">${d.name}</td>
+      <td>${fmtDate(d.updateTime)}</td>
+    </tr>`;
+  });
+}
+
+// ── EVALUATIONS ──
+async function loadEvaluations() {
+  const data = await fetchJSON('/api/evaluations');
+  const tbody = document.getElementById('evaluations-tbody');
+  tbody.innerHTML = '';
+  data.forEach(e => {
+    tbody.innerHTML += `<tr>
+      <td style="font-weight:500;color:var(--text-primary)">${e.displayName}</td>
+      <td>${badgeFor(e.evaluationType)}</td>
+      <td>${badgeFor(e.status)}</td>
+      <td>${pctBar(e.passRate)}</td>
+      <td style="font-family:var(--font-mono)">${e.turnCount}</td>
+      <td class="resource-name">${e.name}</td>
+      <td>${fmtDate(e.updateTime)}</td>
+    </tr>`;
+  });
+}
+
+// ── RUNS ──
+async function loadRuns() {
+  const runs = await fetchJSON('/api/runs');
+  const tbody = document.getElementById('runs-tbody');
+  tbody.innerHTML = '';
+  runs.forEach(r => {
+    const pct = r.progress ? Math.round(r.progress.completedCount / r.progress.totalCount * 100) : 0;
+    const progColor = r.state === 'COMPLETED' ? 'var(--gc-green)' : r.state === 'RUNNING' ? 'var(--gc-blue)' : r.state === 'FAILED' ? 'var(--gc-red)' : 'var(--gc-purple)';
+    tbody.innerHTML += `<tr>
+      <td class="resource-name">${shortName(r.name)}</td>
+      <td>${badgeFor(r.state)}</td>
+      <td><div style="display:flex;align-items:center;gap:8px;">
+        <div class="progress-bar"><div class="progress-bar-fill" style="width:${pct}%;background:${progColor}"></div></div>
+        <span style="font-size:11px;color:var(--text-muted)">${r.progress.completedCount}/${r.progress.totalCount}</span>
+      </div></td>
+      <td>${pctBar(r.passRate)}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${r.duration || '—'}</td>
+      <td class="resource-name">${shortName(r.evaluationName)}</td>
+      <td>${fmtDate(r.createTime)}</td>
+    </tr>`;
+  });
+}
+
+// ── RESULTS ──
+async function loadResults() {
+  const data = await fetchJSON('/api/results');
+  const tbody = document.getElementById('results-tbody');
+  tbody.innerHTML = '';
+  data.forEach(r => {
+    const simColor = r.semanticSimilarity >= 0.85 ? 'var(--gc-green)' : r.semanticSimilarity >= 0.7 ? 'var(--gc-yellow)' : 'var(--gc-red)';
+    tbody.innerHTML += `<tr>
+      <td class="resource-name">${shortName(r.name)}</td>
+      <td>${badgeFor(r.outcome)}</td>
+      <td><span style="font-family:var(--font-mono);color:${simColor}">${r.semanticSimilarity}</span></td>
+      <td>${r.hallucinationDetected ? '<span class="badge badge-failed">YES</span>' : '<span class="badge badge-passed">NO</span>'}</td>
+      <td>${r.toolCallMatch ? '<span class="badge badge-passed">MATCH</span>' : '<span class="badge badge-failed">MISS</span>'}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${r.latencyMs}ms</td>
+      <td style="font-family:var(--font-mono)">${r.turnCount}</td>
+    </tr>`;
+  });
+}
+
+// ── EXPECTATIONS ──
+async function loadExpectations() {
+  const data = await fetchJSON('/api/expectations');
+  const tbody = document.getElementById('expectations-tbody');
+  tbody.innerHTML = '';
+  data.forEach(e => {
+    tbody.innerHTML += `<tr>
+      <td style="font-weight:500;color:var(--text-primary)">${e.displayName}</td>
+      <td>${badgeFor(e.type)}</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${e.llmCriteria ? e.llmCriteria.criteria : '—'}</td>
+      <td class="resource-name">${e.name}</td>
+      <td>${fmtDate(e.createTime)}</td>
+    </tr>`;
+  });
+}
+
+// ── SCHEDULED ──
+async function loadScheduled() {
+  const data = await fetchJSON('/api/scheduled');
+  const tbody = document.getElementById('scheduled-tbody');
+  tbody.innerHTML = '';
+  data.forEach(s => {
+    tbody.innerHTML += `<tr>
+      <td style="font-weight:500;color:var(--text-primary)">${s.displayName}</td>
+      <td>${s.enabled ? '<span class="badge badge-enabled">ENABLED</span>' : '<span class="badge badge-disabled">DISABLED</span>'}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${s.schedule}</td>
+      <td>${fmtDate(s.lastRunTime)}</td>
+      <td>${fmtDate(s.nextRunTime)}</td>
+      <td class="resource-name">${s.name}</td>
+    </tr>`;
+  });
+}
+
+// ── API REFERENCE ──
+async function loadApiRef() {
+  const data = await fetchJSON('/api/reference');
+  const container = document.getElementById('apiref-container');
+  container.innerHTML = '';
+  data.resources.forEach(res => {
+    let html = `<div class="api-resource">
+      <div class="api-resource-title">${res.basePath}</div>`;
+    res.methods.forEach(m => {
+      html += `<div class="api-method-row">
+        <span class="badge-verb badge-${m.verb}">${m.verb}</span>
+        <span class="api-action">${m.action}</span>
+        <span class="api-path">${m.path}</span>
+      </div>`;
+    });
+    html += '</div>';
+    container.innerHTML += html;
+  });
+}
+
+// ── LOAD ALL ──
+async function loadAll() {
+  await Promise.all([
+    loadStats(),
+    loadOverviewRuns(),
+    loadDatasets(),
+    loadEvaluations(),
+    loadRuns(),
+    loadResults(),
+    loadExpectations(),
+    loadScheduled(),
+    loadApiRef(),
+  ]);
+}
+
+loadAll();
+</script>
+</body>
+</html>
